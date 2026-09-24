@@ -50,11 +50,24 @@ CREATE TABLE IF NOT EXISTS panoramas (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    otp_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_requested_at TEXT NOT NULL DEFAULT (datetime('now')),
+    reset_token_hash TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
 CREATE INDEX IF NOT EXISTS idx_rooms_user ON rooms(user_id);
 CREATE INDEX IF NOT EXISTS idx_rooms_category ON rooms(category_id);
 CREATE INDEX IF NOT EXISTS idx_panoramas_room ON panoramas(room_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id);
 """
 
 DEFAULT_CATEGORIES = ["Home", "Kitchen", "Office", "Bedroom", "Living Room", "Bathroom", "Other"]
