@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import Cookie, HTTPException, status
 
-from . import config
+from . import config, security
 from .db import db_cursor
 
 
@@ -23,7 +23,7 @@ def get_current_user(session_token: str | None = Cookie(default=None, alias=conf
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     expires_at = datetime.fromisoformat(row["expires_at"])
-    if expires_at < datetime.utcnow():
+    if expires_at < security.utc_now():
         with db_cursor(commit=True) as cur:
             cur.execute("DELETE FROM sessions WHERE token = ?", (session_token,))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
