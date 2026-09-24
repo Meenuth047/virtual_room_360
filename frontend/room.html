@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room — 360 Rooms</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><a href="/dashboard.html" style="color:inherit">← 360 Rooms</a></div>
+  <div class="user-info">
+    <span id="welcome-text"></span>
+    <button class="btn-secondary btn-sm" id="logout-btn">Log Out</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section-header" style="margin-top:0">
+    <div>
+      <h2 id="room-name">Loading…</h2>
+      <div class="hint" id="room-meta"></div>
+    </div>
+    <div style="display:flex; gap:8px">
+      <button class="btn-secondary btn-sm" id="edit-room-btn">Edit</button>
+      <button class="btn-danger btn-sm" id="delete-room-btn">Delete</button>
+    </div>
+  </div>
+
+  <!-- 360 Viewer (shown when a panorama exists) -->
+  <div id="viewer-section" style="display:none">
+    <h3>360° Room View</h3>
+    <div class="viewer-wrap" id="viewer-wrap">
+      <div class="viewer-loading" id="viewer-loading">Loading panorama…</div>
+      <div class="viewer-controls">
+        <button class="btn-sm" id="zoom-in-btn">＋</button>
+        <button class="btn-sm" id="zoom-out-btn">－</button>
+        <button class="btn-sm" id="fullscreen-btn">⛶</button>
+      </div>
+    </div>
+    <p class="hint">Drag / swipe to look around. Pinch or use the buttons to zoom.</p>
+  </div>
+
+  <!-- Upload / capture instructions -->
+  <h3 style="margin-top:32px">Photos</h3>
+  <p class="hint">
+    Stand in one spot near the center of the room and slowly rotate in place, taking a photo
+    every 20–30°, keeping about 30–50% overlap between neighboring photos.
+    Upload 8–40 photos (15–30 recommended).
+  </p>
+
+  <div class="dropzone" id="dropzone">
+    <div>Drag & drop photos here, or click to select</div>
+    <div class="hint" id="selected-count">No images selected</div>
+    <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp" multiple style="display:none">
+  </div>
+
+  <div class="thumb-grid" id="thumb-grid"></div>
+
+  <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap">
+    <button class="btn-secondary" id="clear-all-btn">Clear All</button>
+    <button class="btn-primary" id="upload-btn" style="width:auto; margin:0">Upload Photos</button>
+    <button class="btn-primary" id="generate-btn" style="width:auto; margin:0">Generate 360°</button>
+  </div>
+
+  <div class="error-msg" id="room-error"></div>
+
+  <div class="progress-panel" id="progress-panel" style="display:none">
+    <strong>Generating your 360° panorama…</strong>
+    <p class="hint" id="progress-message">Preparing and matching your photos. This can take a moment depending on how many images you uploaded.</p>
+  </div>
+</div>
+
+<!-- Edit Room Modal -->
+<div id="edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:50;">
+  <div class="card" style="max-width:400px">
+    <h3>Edit Room</h3>
+    <label for="edit-name">Room Name</label>
+    <input type="text" id="edit-name">
+    <label for="edit-desc">Description</label>
+    <textarea id="edit-desc" rows="2"></textarea>
+    <div style="display:flex; gap:8px; margin-top:20px">
+      <button class="btn-secondary" id="edit-cancel" style="flex:1">Cancel</button>
+      <button class="btn-primary" id="edit-save" style="margin:0;flex:1">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/viewer.js"></script>
+<script src="/static/js/room.js"></script>
+</body>
+</html>
