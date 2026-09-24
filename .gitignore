@@ -6,3 +6,6 @@ uploads/
 .venv/
 bin/
 tests/
+*token*.txt
+website-database-token.txt
+
