@@ -3,9 +3,10 @@ import shutil
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, constr
 
-from .. import config
+from .. import config, storage
 from ..auth import get_current_user
 from ..db import db_cursor
+
 
 router = APIRouter(prefix="/api/rooms", tags=["rooms"])
 
@@ -135,6 +136,12 @@ def update_room(room_id: int, payload: RoomUpdate, user=Depends(get_current_user
 def delete_room(room_id: int, user=Depends(get_current_user)):
     with db_cursor() as cur:
         room = _get_owned_room(cur, room_id, user["id"])
+        cur.execute("SELECT panorama_path, thumbnail_path FROM panoramas WHERE room_id = ?", (room_id,))
+        pano_rows = cur.fetchall()
+
+    for p in pano_rows:
+        storage.delete_asset(p["panorama_path"])
+        storage.delete_asset(p["thumbnail_path"])
 
     with db_cursor(commit=True) as cur:
         cur.execute("DELETE FROM rooms WHERE id = ? AND user_id = ?", (room_id, user["id"]))
@@ -144,3 +151,4 @@ def delete_room(room_id: int, user=Depends(get_current_user)):
         shutil.rmtree(room_dir, ignore_errors=True)
 
     return None
+

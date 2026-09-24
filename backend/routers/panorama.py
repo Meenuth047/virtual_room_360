@@ -2,13 +2,14 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
-from .. import config, security
+from .. import config, security, storage
 from ..auth import get_current_user
 from ..db import db_cursor
 from ..stitching import StitchError, generate_panorama
 from .rooms import _get_owned_room, _room_dir
+
 
 router = APIRouter(tags=["panorama"])
 logger = logging.getLogger("panorama.routes")
@@ -146,15 +147,26 @@ def generate_room_panorama(room_id: int, user=Depends(get_current_user)):
             detail="An unexpected error occurred while generating the panorama. Please try again.",
         )
 
+    saved_pano = storage.upload_asset(
+        panorama_path,
+        folder=f"virtual_room_360/users_{user['id']}/rooms_{room_id}",
+        public_id=f"pano_{panorama_id}",
+    )
+    saved_thumb = storage.upload_asset(
+        thumbnail_path,
+        folder=f"virtual_room_360/users_{user['id']}/rooms_{room_id}",
+        public_id=f"thumb_{panorama_id}",
+    )
+
+    if storage.is_cloud_storage_enabled():
+        panorama_path.unlink(missing_ok=True)
+        thumbnail_path.unlink(missing_ok=True)
+
     with db_cursor(commit=True) as cur:
         cur.execute(
             "UPDATE panoramas SET processing_status = 'complete', panorama_path = ?, thumbnail_path = ?, "
             "updated_at = datetime('now') WHERE id = ?",
-            (
-                str(panorama_path.relative_to(config.UPLOADS_DIR)),
-                str(thumbnail_path.relative_to(config.UPLOADS_DIR)),
-                panorama_id,
-            ),
+            (saved_pano, saved_thumb, panorama_id),
         )
         cur.execute("UPDATE rooms SET updated_at = datetime('now') WHERE id = ?", (room_id,))
 
@@ -193,23 +205,26 @@ def delete_panorama(panorama_id: int, user=Depends(get_current_user)):
     for key in ("panorama_path", "thumbnail_path"):
         rel = panorama[key]
         if rel:
-            f = config.UPLOADS_DIR / rel
-            f.unlink(missing_ok=True)
+            storage.delete_asset(rel)
     return None
 
 
-def _serve_asset(relative_path: str, room_id: int, user_id: int):
-    """Serve a file from a room's directory only after verifying ownership."""
+def _serve_asset(path_or_url: str, room_id: int, user_id: int):
+    """Serve a file or redirect to cloud asset only after verifying ownership."""
     with db_cursor() as cur:
         cur.execute("SELECT id FROM rooms WHERE id = ? AND user_id = ?", (room_id, user_id))
         if cur.fetchone() is None:
             raise HTTPException(status_code=404, detail="Not found.")
 
+    if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
+        return RedirectResponse(url=path_or_url, status_code=307)
+
     base = config.UPLOADS_DIR.resolve()
-    target = (config.UPLOADS_DIR / relative_path).resolve()
+    target = (config.UPLOADS_DIR / path_or_url).resolve()
     if base not in target.parents or not target.exists():
         raise HTTPException(status_code=404, detail="File not found.")
     return FileResponse(target)
+
 
 
 @router.get("/api/rooms/{room_id}/panorama-file")

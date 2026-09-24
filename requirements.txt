@@ -6,3 +6,6 @@ opencv-python-headless==4.10.0.84
 numpy==1.26.4
 pydantic[email]==2.9.2
 python-dotenv>=1.0.0
+libsql>=0.1.0
+cloudinary>=1.40.0
+

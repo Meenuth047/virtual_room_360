@@ -73,7 +73,75 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user
 DEFAULT_CATEGORIES = ["Home", "Kitchen", "Office", "Bedroom", "Living Room", "Bathroom", "Other"]
 
 
+class DictRow(dict):
+    """Row wrapper that supports both column name lookup ('email') and numeric index lookup (0)."""
+
+    def __init__(self, cols, row):
+        super().__init__({cols[i]: val for i, val in enumerate(row)})
+        self._row = row
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._row[key]
+        return super().__getitem__(key)
+
+
+class LibsqlCursorWrapper:
+    """Wraps a libsql cursor to match sqlite3.Cursor interface and return DictRow."""
+
+    def __init__(self, cursor, conn):
+        self._cursor = cursor
+        self.connection = conn
+
+    def execute(self, sql, params=()):
+        return self._cursor.execute(sql, params)
+
+    def executemany(self, sql, params=()):
+        return self._cursor.executemany(sql, params)
+
+    def fetchone(self):
+        row = self._cursor.fetchone()
+        if row is None:
+            return None
+        cols = [c[0] for c in self._cursor.description]
+        return DictRow(cols, row)
+
+    def fetchall(self):
+        rows = self._cursor.fetchall()
+        if not rows:
+            return []
+        cols = [c[0] for c in self._cursor.description]
+        return [DictRow(cols, r) for r in rows]
+
+    @property
+    def lastrowid(self):
+        return getattr(self._cursor, "lastrowid", None)
+
+    @property
+    def rowcount(self):
+        return getattr(self._cursor, "rowcount", -1)
+
+    @property
+    def description(self):
+        return getattr(self._cursor, "description", None)
+
+
+def is_turso_enabled() -> bool:
+    return bool(config.TURSO_DATABASE_URL)
+
+
 def get_connection():
+    if is_turso_enabled():
+        import libsql
+
+        auth_token = config.TURSO_AUTH_TOKEN or None
+        conn = libsql.connect(config.TURSO_DATABASE_URL, auth_token=auth_token)
+        try:
+            conn.execute("PRAGMA foreign_keys = ON")
+        except Exception:
+            pass
+        return conn
+
     conn = sqlite3.connect(config.DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -84,7 +152,11 @@ def get_connection():
 def db_cursor(commit: bool = False):
     conn = get_connection()
     try:
-        cur = conn.cursor()
+        raw_cur = conn.cursor()
+        if is_turso_enabled():
+            cur = LibsqlCursorWrapper(raw_cur, conn)
+        else:
+            cur = raw_cur
         yield cur
         if commit:
             conn.commit()
@@ -108,3 +180,4 @@ def seed_default_categories(user_id: int):
                 "INSERT OR IGNORE INTO categories (user_id, name) VALUES (?, ?)",
                 (user_id, name),
             )
+

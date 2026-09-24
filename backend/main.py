@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import config
 from .db import init_db
+from .storage import init_storage
 from .routers import auth_routes, categories, rooms, panorama
 
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +25,8 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    init_storage()
+
 
 
 @app.exception_handler(Exception)
