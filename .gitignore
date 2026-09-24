@@ -4,4 +4,5 @@ data/app.db
 uploads/
 .env
 .venv/
+bin/
 tests/

@@ -1,13 +1,3 @@
----
-title: Virtual Room 360
-emoji: 🏠
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # 360 Rooms
 
 A lightweight web app for turning a handful of phone photos into an interactive
