@@ -17,6 +17,7 @@ Depending on what service your official email uses, update .env:
 2. Go to Google Account → Security → Enable 2-Step Verification.
 3. Generate an App Password for that official account.
 4. Update .env:
+```env
 	SMTP_HOST=smtp.gmail.com
 	SMTP_PORT=465
 	SMTP_USERNAME=support@yourdomain.com
@@ -24,6 +25,7 @@ Depending on what service your official email uses, update .env:
 	SMTP_FROM=support@yourdomain.com
 	SMTP_USE_TLS=false
 	SMTP_USE_SSL=true
+```
 
 #### Scenario B: Your Official Email is on a Custom Domain via a Service (Brevo, SendGrid, Amazon SES, Zoho, etc.)
 
@@ -31,6 +33,7 @@ If you host your domain's email with a transactional email provider (like Brevo,
 
 1. Verify your official email address (e.g. noreply@yourdomain.com) in their dashboard.
 2. Update .env with their SMTP host and credentials:
+```env
 	SMTP_HOST=smtp-relay.brevo.com
 	SMTP_PORT=587
 	SMTP_USERNAME=your_provider_username_or_api_key
@@ -38,6 +41,7 @@ If you host your domain's email with a transactional email provider (like Brevo,
 	SMTP_FROM=noreply@yourdomain.com
 	SMTP_USE_TLS=true
 	SMTP_USE_SSL=false
+```
 
 ### Bonus Tip: Adding a Friendly Brand Name
 
